@@ -1,0 +1,4 @@
+name,surname,type,password,id
+Ash,Graham,Landlord,changeme,1
+Hugh,Jones,Tenant,changeme,2
+1,1,Test,1,0
