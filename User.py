@@ -13,6 +13,7 @@ from Classes import *
 import csv
 from Window import Default
 from dateutil.relativedelta import relativedelta
+import threading
 
 class UserWindow:
     def __init__(self, title= str):
@@ -156,13 +157,21 @@ Duration: {self.current_lease.length_months} seconds')
 
         def start_lease(*args):
            lease_button.configure(state=DISABLED)
-           user.leases[index()].sign()
+           leasing_thread = threading.Thread(target=user.leases[index()].sign, args=())
+           leasing_thread.daemon = True
+           leasing_thread.start()
+           
 
         def lease_status():
+
             if not self.current_lease.is_signed:
                 self.status_text.set('Lease is not signed.')
+            elif self.current_lease.is_signed and not hasattr(self.current_lease, 'termination'):
+                self.status_text.set('Lease is being signed...')
             elif self.current_lease.termination < datetime.datetime.now():
-             self.current_lease.terminate()
+                self.current_lease.terminate()
+                self.status_text('Lease terminated.')
+                lease_button.configure(state=NORMAL)
             else:
                 self.status_text.set(f'Lease is signed. Time left: {self.current_lease.termination - datetime.datetime.now()}')
 
