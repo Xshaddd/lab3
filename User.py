@@ -118,12 +118,51 @@ class UserWindow:
 
         self.root.geometry('700x200+300+300')
         user = Landlord(self.name.get(), self.surname.get())
-
+        user._property = []
         with open('propertyinfo.csv') as file:
             reader = csv.DictReader(file)
             for row in reader:
                 if row['ownerid'] == self.id.get():
                     user._property.append(Housing(float(row['area']), row['address']))
+
+        def add_property(*args):
+            def accept(*args):
+                with open('propertyinfo.csv') as file:
+                    reader = csv.DictReader(file)
+                    for row in reader:
+                        new_id = int(row['id']) + 1
+
+                with open('propertyinfo.csv', 'a') as file:
+                    file.write('\n')
+                    writer = csv.DictWriter(file, ['area', 'address', 'ownerid', 'id'])
+                    writer.writerow({'area': area_var.get(), 'address': address_var.get(), 'id': new_id, 'ownerid': self.id.get()})
+                listbox.insert(END, address_var.get())
+                user._property.append(Housing(area_var.get(), address_var.get()))
+                form_window.destroy()
+
+
+            form_window = Toplevel(self.root)
+            form_window.title('Add property')
+            form_window.geometry('500x180+400+400')
+            form_window.resizable(False, False)
+
+            ttk.Label(form_window, text='Area').grid(column=1, row=1)
+            ttk.Label(form_window, text='Address').grid(column=1, row=2)
+
+            area_var = StringVar()
+            address_var = StringVar()
+
+            ttk.Entry(form_window, textvariable=area_var).grid(column=2, row=1)
+            ttk.Entry(form_window, textvariable=address_var).grid(column=2, row=2)
+
+            ttk.Button(form_window, text='Cancel', command=form_window.destroy).grid(column=1, row=4)
+            ttk.Button(form_window, text='OK', command=accept).grid(column=3, row=4)
+                            
+            for child in form_window.winfo_children():
+                child.grid(padx=10, pady=10)
+            form_window.transient(self.root)
+            form_window.grab_set()
+            self.root.wait_window(form_window)
         
         self.mainframe.rowconfigure(1, minsize=30, weight=1)
         self.mainframe.rowconfigure(2, minsize=30, weight=1)
@@ -140,6 +179,9 @@ class UserWindow:
         info_label = ttk.Label(self.mainframe, textvariable=info_text)
         info_text.set('Select one of your properties to continue')
         info_label.grid(column=4, row=1)
+
+        add_property_button = ttk.Button(self.mainframe, text='Add', command=add_property)
+        add_property_button.grid(column=4, row=2)
 
         
         listbox.bind('<<ListboxSelect>>', show_selection_options)
@@ -163,7 +205,6 @@ Duration: {self.current_lease.length_months} seconds')
            
 
         def lease_status():
-
             if not self.current_lease.is_signed:
                 self.status_text.set('Lease is not signed.')
             elif self.current_lease.is_signed and not hasattr(self.current_lease, 'termination'):
